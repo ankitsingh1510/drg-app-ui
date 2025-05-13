@@ -141,7 +141,7 @@ export default function Layout() {
             >
               <Feather name="menu" size={24} color="#333" />
             </Pressable>
-            <Text className="text-lg font-semibold ml-2">DRG Health</Text>
+            <Text className="text-lg font-semibold ml-2">Dr.G</Text>
           </View>
         </>
       )}
