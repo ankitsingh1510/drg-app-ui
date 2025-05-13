@@ -2,42 +2,24 @@
   "expo": {
     "name": "DRG-App",
     "slug": "DRG-App",
-    "version": "1.0.0",
-    "orientation": "default",
-    "icon": "./src/assets/DrG.png",
     "scheme": "acme",
     "userInterfaceStyle": "automatic",
+    "orientation": "default",
     "splash": {
       "image": "./src/assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./src/assets/DrG.png",
-        "backgroundColor": "#ffffff"
-      }
-    },
     "web": {
-      "output": "static",
-      "favicon": "./src/assets/favicon.png"
+      "output": "static"
     },
     "plugins": [
       [
         "expo-router",
         {
-          "origin": "https://myapp.com"
+          "origin": "https://n"
         }
       ]
-    ],
-    "experiments": {
-      "typedRoutes": true
-    }
+    ]
   }
 }
