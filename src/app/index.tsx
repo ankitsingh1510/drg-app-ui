@@ -85,34 +85,9 @@ export default function Page() {
   }, []);
 
 
-  const handleUpload = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*',
-      });
-
-      if (result.assets && result.assets[0]) {
-        // Here you would typically handle the file upload
-        console.log('Selected file:', result.assets[0].name);
-      }
-    } catch (err) {
-      console.error('Error picking document:', err);
-    }
-  };
 
   return (
     <ScrollView className="flex-1 bg-gray-50 p-4">
-      <View className="flex-row justify-between items-center mb-6">
-        <View className="flex-row gap-4">
-          <Pressable
-            onPress={handleUpload}
-            className="bg-blue-500 px-4 py-2 rounded-lg"
-          >
-            <Text className="text-white">Upload</Text>
-          </Pressable>
-
-        </View>
-      </View>
 
       <View className="gap-4">
         {fileList.map((file) => (

@@ -1,6 +1,7 @@
 import "../global.css";
-import { useEffect, useState, useRef } from "react";
-import { Slot, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { Slot, useRouter, usePathname } from "expo-router";
+import * as DocumentPicker from 'expo-document-picker';
 import { View, Text, Pressable, SafeAreaView, TouchableOpacity } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -17,6 +18,7 @@ export default function Layout() {
   const initialize = useAuthStore(state => state.initialize);
   const [appReady, setAppReady] = useState(false);
   const router = useRouter();
+  const pathname = usePathname(); // Get current pathname using the hook
 
   // Create overlay opacity animation value
   const overlayOpacity = useSharedValue(0);
@@ -77,6 +79,33 @@ export default function Layout() {
     { name: 'Help', icon: 'help-circle', route: '/(app)/help' },
   ];
 
+
+  const handleUpload = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+      });
+
+      if (result.assets && result.assets[0]) {
+        // Here you would typically handle the file upload
+        console.log('Selected file:', result.assets[0].name);
+      }
+    } catch (err) {
+      console.error('Error picking document:', err);
+    }
+  };
+
+  // Helper function to get page title based on pathname
+  const getPageTitle = () => {
+    if (pathname === "/") return "Dashboard";
+    if (pathname.includes("/[id]")) return "Chat";
+
+    // Extract the last part of the path for other routes
+    const pathParts = pathname.split('/');
+    const lastSegment = pathParts[pathParts.length - 1];
+    return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
+  };
+
   if (!appReady) {
     return (
       <SafeAreaView className="flex-1 bg-white items-center justify-center">
@@ -123,7 +152,7 @@ export default function Layout() {
               className="absolute bottom-8 left-4 right-4 bg-red-500 py-3 rounded-lg flex-row justify-center items-center"
               onPress={() => {
                 // Handle logout
-                useAuthStore(state => state.logout);
+                useAuthStore.getState().logout(); // Fixed logout call
                 closeSidebar();
               }}
             >
@@ -133,15 +162,28 @@ export default function Layout() {
           </Animated.View>
 
           {/* Header */}
-          <View className="flex-row items-center p-4 bg-white border-b border-gray-200 shadow-sm">
-            <Pressable
-              className="p-2"
-              onPress={toggleSidebar}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Feather name="menu" size={24} color="#333" />
-            </Pressable>
-            <Text className="text-lg font-semibold ml-2">Dr.G</Text>
+          <View className="flex-row items-center justify-between p-4 bg-white border-b border-gray-200 shadow-sm">
+            <View className="flex-row items-center">
+              <Pressable
+                className="p-2"
+                onPress={toggleSidebar}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Feather name="menu" size={24} color="#333" />
+              </Pressable>
+              <Text className="text-lg font-semibold ml-2">
+                {getPageTitle()}
+              </Text>
+            </View>
+            {pathname === "/" && (
+              <TouchableOpacity
+                className="bg-blue-600 px-4 py-2 rounded-lg flex-row items-center"
+                onPress={handleUpload}
+              >
+                <Feather name="upload" size={18} color="white" />
+                <Text className="text-white ml-2">Upload</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </>
       )}
