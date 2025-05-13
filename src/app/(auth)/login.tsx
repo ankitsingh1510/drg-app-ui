@@ -34,7 +34,7 @@ export default function Login() {
       <View className="space-y-4">
         <View className="items-center mb-8">
           <Image 
-            source={require('../../assets/DrG logo.png')}
+            source={require('../../assets/DrG.png')}
             className="w-32 h-32"
             resizeMode="contain"
           />
