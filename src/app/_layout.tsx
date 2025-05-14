@@ -98,18 +98,19 @@ export default function Layout() {
   // Helper function to get page title based on pathname
   const getPageTitle = () => {
     if (pathname === "/") return "Dashboard";
-    if (pathname.includes("/[id]")) return "Chat";
-
+    if (pathname.match(/\/[^/]+$/)) return "Chat";
+    console.log("pathname",pathname);
     // Extract the last part of the path for other routes
     const pathParts = pathname.split('/');
     const lastSegment = pathParts[pathParts.length - 1];
+    console.log(lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1));
     return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
   };
 
   if (!appReady) {
     return (
       <SafeAreaView className="flex-1 bg-white items-center justify-center">
-        <Text className="text-3xl font-bold">DRG App</Text>
+        <Text className="text-3xl font-bold">Dr.G</Text>
       </SafeAreaView>
     );
   }
@@ -132,7 +133,7 @@ export default function Layout() {
             style={sidebarStyle}
           >
             <View className="p-6 bg-blue-600">
-              <Text className="text-2xl font-bold text-white">DRG App</Text>
+              <Text className="text-2xl font-bold text-white">Dr.G</Text>
             </View>
 
             <View className="mt-4">

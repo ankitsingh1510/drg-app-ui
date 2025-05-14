@@ -1,4 +1,4 @@
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import React, { use, useEffect } from "react";
 import { Text, View, Pressable, ScrollView, Image } from "react-native";
 import * as DocumentPicker from 'expo-document-picker';
@@ -11,6 +11,7 @@ export default function Page() {
   const [fileList, setFileList] = React.useState<FileItemInfo[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [noContent, setNoContent] = React.useState(false);
+  const router = useRouter();
   const getEncodedFileURL = (localFile: any) => {
     const fileBucketUrl = localFile.id;
     const fileURL = fileBucketUrl
@@ -37,7 +38,6 @@ export default function Page() {
   };
   const fetchFiles = async (fileListParams: FileParamInfo) => {
     try {
-      console.log('Fetching files', fileListParams);
       const res = await ReportService.getFileList(fileListParams);
       if (res?.statusCode === 200) {
         if (res?.data?.data?.length) {
@@ -51,7 +51,7 @@ export default function Page() {
               return { ...obj, signedURL: signedURL };
             })
           )) as FileItemInfo[];
-          console.log('File list with signed URL:', fileListWithSignedURL);
+          // console.log('File list with signed URL:', fileListWithSignedURL);
           setFileList(fileListWithSignedURL);
         } else {
           setLoading(false);
@@ -92,7 +92,7 @@ export default function Page() {
       <View className="gap-4">
         {fileList.map((file) => (
           <Pressable
-            key={file.id}
+            key={file.uniqueId}
             className={`relative rounded-lg border p-2 shadow-md ${!file.hasOwnProperty('uniqueId') || file?.uniqueId === ''
               ? ''
               : 'cursor-pointer'
@@ -103,6 +103,7 @@ export default function Page() {
               }
               // Handle card click logic here
               console.log('Card clicked:', file);
+              router.replace(`/${file.uniqueId}`);
             }}
           >
             {!file.hasOwnProperty('uniqueId') || file?.uniqueId === '' ? (

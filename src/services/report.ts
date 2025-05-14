@@ -59,7 +59,7 @@ class ReportServiceClass {
         };
 
         const response = await this.getGQLResponse(reqParams);
-        console.log("File exists response:", response.data);
+        // console.log("File exists response:", response.data);
         return response.data;
     }
 
