@@ -98,15 +98,15 @@ const ChatInterface = () => {
 
     const MessageBubble = ({ message }) => (
         <View
-            className={`flex-row mb-4 items-start ${message.sender === 'user' ? 'justify-end flex-row-reverse' : ''}`}
+            className={`flex-row mb-4 items-start ${message.sender === 'user' ? 'justify-end' : ''}`}
         >
-            <View className="w-8 h-8 rounded-full bg-gray-200 justify-center items-center mx-2">
-                <Text className="text-base font-medium">
-                    {message.sender === 'user' ? 'U' : 'G'}
-                </Text>
-            </View>
+            {message.sender === 'user' ? null : (
+                <View className="w-8 h-8 rounded-full bg-gray-200 justify-center items-center mr-2">
+                    <Text className="text-base font-medium">G</Text>
+                </View>
+            )}
             <View
-                className={`max-w-[80%] p-3 rounded-xl shadow ${message.sender === 'user' ? 'bg-indigo-600' : 'bg-white border border-gray-200'} `}
+                className={`max-w-[80%] p-3 rounded-xl shadow ${message.sender === 'user' ? 'bg-[#5c7ac6] mr-2 ml-8' : 'bg-white border border-gray-200 ml-0 mr-0'}`}
             >
                 <Text className={`${message.sender === 'user' ? 'text-white' : 'text-black'} text-sm leading-5`}>
                     {message.text}
@@ -115,6 +115,11 @@ const ChatInterface = () => {
                     {formatTimestamp(message.timestamp)}
                 </Text>
             </View>
+            {message.sender === 'user' ? (
+                <View className="w-8 h-8 rounded-full bg-gray-200 justify-center items-center ml-2">
+                    <Text className="text-base font-medium">U</Text>
+                </View>
+            ) : null}
         </View>
     );
 
