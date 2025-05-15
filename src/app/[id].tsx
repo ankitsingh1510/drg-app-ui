@@ -1,4 +1,6 @@
 import ChatInterface from "@/components/ChatInterface"
+import PdfViewer from "@/components/PdfViewer"
+import VideoCard from "@/components/VideoCard"
 import { useLocalSearchParams } from "expo-router"
 import { useState, useRef, useEffect } from "react"
 import {
@@ -8,6 +10,7 @@ import {
   Animated,
   useWindowDimensions,
 } from "react-native"
+import Draggable from 'react-native-draggable';
 
 export default function ReportDetail() {
   const { id } = useLocalSearchParams()
@@ -69,34 +72,48 @@ export default function ReportDetail() {
     ? { width: secondSize }
     : { height: secondSize }
 
+  // Calculate VideoCard size in dp
+  const videoCardWidth = Math.round(width * 0.35); // 35% of screen width
+  const videoCardHeight = Math.round(height * 0.25); // 25% of screen height
+
+  // Restrict draggable area so VideoCard stays fully visible
+  const minX = 0;
+  const minY = 0;
+  const maxX = width - videoCardWidth;
+  const maxY = height - videoCardHeight;
+
   return (
     <View className={`flex-1 ${containerStyle}`}>
-      {/* First Section */}
       <AnimatedView
         className="bg-white justify-center items-center"
         style={firstSectionStyle}
       >
-        <Text className="text-xl font-semibold">
-          {isLandscape ? "Left Component" : "Top Component"}
-        </Text>
-        <Text className="text-gray-500">
-          {Math.round(splitPercent.__getValue() * 100)}% of screen
-        </Text>
+        <PdfViewer />
       </AnimatedView>
 
-      {/* Divider */}
       <View {...panResponder.panHandlers} className={dividerStyle}>
         <View className={handleStyle} />
       </View>
 
-      {/* Second Section */}
       <AnimatedView
         className="bg-gray-50 flex-col justify-between items-stretch flex-1"
         style={secondSectionStyle}
       >
         <ChatInterface />
-
       </AnimatedView>
+      <Draggable
+        x={50}
+        y={50}
+        minX={0}
+        minY={0}
+        maxX={maxX}
+        maxY={maxY}
+        onRelease={(e, wasDragging) => console.log('Released', wasDragging)}
+        onDrag={(e, gestureState) => console.log('Dragging', gestureState.moveX, gestureState.moveY)}
+        onPressOut={e => console.log('Press out')}
+      >
+        <VideoCard width={videoCardWidth} height={videoCardHeight} />
+      </Draggable>
     </View>
   )
 }
