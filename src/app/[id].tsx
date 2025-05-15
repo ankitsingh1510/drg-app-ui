@@ -1,3 +1,4 @@
+import ChatInterface from "@/components/ChatInterface"
 import { useLocalSearchParams } from "expo-router"
 import { useState, useRef, useEffect } from "react"
 import {
@@ -55,11 +56,11 @@ export default function ReportDetail() {
   const AnimatedView = Animated.View
   const containerStyle = isLandscape ? "flex-row" : "flex-col"
   const dividerStyle = isLandscape
-    ? "w-6 h-full bg-gray-200 justify-center items-center"
-    : "h-6 w-full bg-gray-200 justify-center items-center"
+    ? "w-1 h-full bg-gray-200 justify-center items-center"
+    : "h-1 w-full bg-gray-200 justify-center items-center"
   const handleStyle = isLandscape
-    ? "h-16 w-1 bg-gray-500 rounded-full"
-    : "w-16 h-1 bg-gray-500 rounded-full"
+    ? "h-4 w-1 bg-gray-500 rounded-full"
+    : "w-4 h-1 bg-gray-500 rounded-full"
 
   const firstSectionStyle = isLandscape
     ? { width: splitSize }
@@ -90,15 +91,11 @@ export default function ReportDetail() {
 
       {/* Second Section */}
       <AnimatedView
-        className="bg-gray-50 justify-center items-center"
+        className="bg-gray-50 flex-col justify-between items-stretch flex-1"
         style={secondSectionStyle}
       >
-        <Text className="text-xl font-semibold">
-          {isLandscape ? "Right Component" : "Bottom Component"}
-        </Text>
-        <Text className="text-gray-500">
-          {Math.round((1 - splitPercent.__getValue()) * 100)}% of screen
-        </Text>
+        <ChatInterface />
+
       </AnimatedView>
     </View>
   )

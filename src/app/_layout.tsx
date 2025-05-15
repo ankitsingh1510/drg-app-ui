@@ -98,7 +98,7 @@ export default function Layout() {
   // Helper function to get page title based on pathname
   const getPageTitle = () => {
     if (pathname === "/") return "Dashboard";
-    if (pathname.match(/\/[^/]+$/)) return "Chat";
+    if (pathname.match(/\/[^/]+$/)) return "Chat With Dr.G";
     console.log("pathname",pathname);
     // Extract the last part of the path for other routes
     const pathParts = pathname.split('/');
@@ -172,7 +172,7 @@ export default function Layout() {
               >
                 <Feather name="menu" size={24} color="#333" />
               </Pressable>
-              <Text className="text-lg font-semibold ml-2">
+              <Text className="text-lg font-semibold ml-2 ">
                 {getPageTitle()}
               </Text>
             </View>
