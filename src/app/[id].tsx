@@ -77,10 +77,8 @@ export default function ReportDetail() {
   const videoCardHeight = Math.round(height * 0.25); // 25% of screen height
 
   // Restrict draggable area so VideoCard stays fully visible
-  const minX = 0;
-  const minY = 0;
-  const maxX = width - videoCardWidth;
-  const maxY = height - videoCardHeight;
+  const maxX = width ;
+  const maxY = height ;
 
   return (
     <View className={`flex-1 ${containerStyle}`}>

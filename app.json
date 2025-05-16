@@ -20,6 +20,12 @@
           "origin": "https://n"
         }
       ]
-    ]
+    ],
+    "android": {
+      "package": "com.ankit.bisht.DRGApp",
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
+    }
   }
 }
