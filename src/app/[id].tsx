@@ -1,30 +1,42 @@
 import ChatInterface from "@/components/ChatInterface"
 import PdfViewer from "@/components/PdfViewer"
-import VideoCard from "@/components/VideoCard"
 import { useLocalSearchParams } from "expo-router"
 import { useState, useRef, useEffect } from "react"
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring
+} from 'react-native-reanimated';
 import {
   View,
   Text,
   PanResponder,
-  Animated,
-  useWindowDimensions,
+  Animated as RNAnimated,
+  useWindowDimensions
 } from "react-native"
-import Draggable from 'react-native-draggable';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import VideoCard from "@/components/VideoCard";
 
 export default function ReportDetail() {
   const { id } = useLocalSearchParams()
   const { width, height } = useWindowDimensions()
   const isLandscape = width > height
 
+  // Split pane configuration
   const minPercent = 0.2
   const maxPercent = 0.8
   const dividerSize = 24
-
-  const [splitPercent] = useState(new Animated.Value(0.5))
+  const [splitPercent] = useState(new RNAnimated.Value(0.5))
   const [currentContainerSize, setCurrentContainerSize] = useState(
     isLandscape ? width : height
   )
+
+  // Draggable card state
+  const cardSize = useSharedValue({ width: 200, height: 150 });
+  const cardPosition = useSharedValue({
+    x: width / 2 - 100,
+    y: height / 2 - 75
+  });
 
   // Update container size on dimension/orientation change
   useEffect(() => {
@@ -32,8 +44,8 @@ export default function ReportDetail() {
   }, [width, height, isLandscape])
 
   // Dynamically calculate split sizes
-  const splitSize = Animated.multiply(splitPercent, currentContainerSize - dividerSize)
-  const secondSize = Animated.subtract(currentContainerSize - dividerSize, splitSize)
+  const splitSize = RNAnimated.multiply(splitPercent, currentContainerSize - dividerSize)
+  const secondSize = RNAnimated.subtract(currentContainerSize - dividerSize, splitSize)
 
   const panResponder = useRef(
     PanResponder.create({
@@ -47,7 +59,7 @@ export default function ReportDetail() {
         splitPercent.setValue(newPercent)
       },
       onPanResponderRelease: () => {
-        Animated.spring(splitPercent, {
+        RNAnimated.spring(splitPercent, {
           toValue: splitPercent.__getValue(),
           useNativeDriver: false,
           friction: 7,
@@ -56,7 +68,72 @@ export default function ReportDetail() {
     })
   ).current
 
-  const AnimatedView = Animated.View
+  // Gesture handlers for the draggable card
+  const startPosition = useSharedValue({ x: cardPosition.value.x, y: cardPosition.value.y });
+  const baseCardSize = useSharedValue({ width: cardSize.value.width, height: cardSize.value.height });
+
+  const panGesture = Gesture.Pan()
+    .onBegin(() => {
+      startPosition.value = { ...cardPosition.value };
+    })
+    .onUpdate((event) => {
+      // Calculate new position with boundary constraints using translationX/Y
+      const newX = Math.min(
+        width - cardSize.value.width,
+        Math.max(0, startPosition.value.x + event.translationX)
+      );
+      const newY = Math.min(
+        height - cardSize.value.height,
+        Math.max(0, startPosition.value.y + event.translationY)
+      );
+
+      cardPosition.value = {
+        x: newX,
+        y: newY
+      };
+    });
+
+  const pinchGesture = Gesture.Pinch()
+    .onBegin(() => {
+      baseCardSize.value = { ...cardSize.value };
+    })
+    .onUpdate((event) => {
+      // Use baseCardSize to make pinch scaling relative and smooth
+      const newWidth = Math.min(
+        width * 0.8,
+        Math.max(100, baseCardSize.value.width * event.scale)
+      );
+      const newHeight = Math.min(
+        height * 0.8,
+        Math.max(75, baseCardSize.value.height * event.scale)
+      );
+      cardSize.value = {
+        width: newWidth,
+        height: newHeight
+      };
+    });
+
+  // Combine gestures
+  const gesture = Gesture.Simultaneous(panGesture, pinchGesture);
+
+  // Animated styles for the draggable card
+  const animatedCardStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    left: cardPosition.value.x,
+    top: cardPosition.value.y,
+    width: cardSize.value.width,
+    height: cardSize.value.height,
+    backgroundColor: 'red',
+    borderRadius: 8,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    zIndex: 1000,
+  }));
+
+  const AnimatedView = RNAnimated.View
   const containerStyle = isLandscape ? "flex-row" : "flex-col"
   const dividerStyle = isLandscape
     ? "w-1 h-full bg-gray-200 justify-center items-center"
@@ -72,46 +149,34 @@ export default function ReportDetail() {
     ? { width: secondSize }
     : { height: secondSize }
 
-  // Calculate VideoCard size in dp
-  const videoCardWidth = Math.round(width * 0.35); // 35% of screen width
-  const videoCardHeight = Math.round(height * 0.25); // 25% of screen height
-
-  // Restrict draggable area so VideoCard stays fully visible
-  const maxX = width ;
-  const maxY = height ;
-
   return (
-    <View className={`flex-1 ${containerStyle}`}>
-      <AnimatedView
-        className="bg-white justify-center items-center"
-        style={firstSectionStyle}
-      >
-        <PdfViewer />
-      </AnimatedView>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View className={`flex-1 ${containerStyle}`}>
+        <AnimatedView
+          className="bg-white justify-center items-center"
+          style={firstSectionStyle}
+        >
+          <PdfViewer />
+        </AnimatedView>
 
-      <View {...panResponder.panHandlers} className={dividerStyle}>
-        <View className={handleStyle} />
+        <View {...panResponder.panHandlers} className={dividerStyle}>
+          <View className={handleStyle} />
+        </View>
+
+        <AnimatedView
+          className="bg-gray-50 flex-1"
+          style={secondSectionStyle}
+        >
+          <ChatInterface />
+        </AnimatedView>
+
+        {/* The draggable card */}
+        <GestureDetector gesture={gesture}>
+          <Animated.View style={animatedCardStyle}>
+            <VideoCard height={cardSize.value.height} width={cardSize.value.width} />
+          </Animated.View>
+        </GestureDetector>
       </View>
-
-      <AnimatedView
-        className="bg-gray-50 flex-col justify-between items-stretch flex-1"
-        style={secondSectionStyle}
-      >
-        <ChatInterface />
-      </AnimatedView>
-      <Draggable
-        x={50}
-        y={50}
-        minX={0}
-        minY={0}
-        maxX={maxX}
-        maxY={maxY}
-        onRelease={(e, wasDragging) => console.log('Released', wasDragging)}
-        onDrag={(e, gestureState) => console.log('Dragging', gestureState.moveX, gestureState.moveY)}
-        onPressOut={e => console.log('Press out')}
-      >
-        <VideoCard width={videoCardWidth} height={videoCardHeight} />
-      </Draggable>
-    </View>
+    </GestureHandlerRootView>
   )
 }

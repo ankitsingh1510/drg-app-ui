@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
 
-export default function VideoCard({ width = 200, height = 120 }: { width?: number; height?: number }) {
+export default function VideoCard({ width = 200, height = 120 }: { width: number; height: number }) {
     const [isMicOn, setIsMicOn] = useState(false);
     const [transcript, setTranscript] = useState("");
 
@@ -11,6 +11,10 @@ export default function VideoCard({ width = 200, height = 120 }: { width?: numbe
     useSpeechRecognitionEvent("result", (event) => {
         console.log("Speech recognition result:", event);
         setTranscript(event.results[0]?.transcript || "");
+    });
+
+    useEffect(() => {
+        console.log(height, width);
     });
 
 
