@@ -84,7 +84,7 @@ export default function VideoCard() {
                 {!isInteractionOn ? (
                     <TouchableOpacity
                         onPress={startCall}
-                        className="rounded-full p-3 bg-green-500"
+                        className="rounded-full p-2 bg-green-500"
                     >
                         <Ionicons
                             name="call"
@@ -95,7 +95,7 @@ export default function VideoCard() {
                 ) : (
                     <TouchableOpacity
                         onPress={endCall}
-                        className="rounded-full p-3 bg-red-500"
+                        className="rounded-full p-2 bg-red-500"
                     >
                         <Ionicons
                             name="call"
