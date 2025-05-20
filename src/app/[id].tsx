@@ -123,7 +123,8 @@ export default function ReportDetail() {
     top: cardPosition.value.y,
     width: cardSize.value.width,
     height: cardSize.value.height,
-    backgroundColor: 'red',
+    minHeight: 125,
+    minWidth: 125,
     borderRadius: 8,
     elevation: 5,
     shadowColor: '#000',
@@ -173,7 +174,7 @@ export default function ReportDetail() {
         {/* The draggable card */}
         <GestureDetector gesture={gesture}>
           <Animated.View style={animatedCardStyle}>
-            <VideoCard height={cardSize.value.height} width={cardSize.value.width} />
+            <VideoCard/>
           </Animated.View>
         </GestureDetector>
       </View>

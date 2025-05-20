@@ -1,37 +1,29 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
 
-export default function VideoCard({ width = 200, height = 120 }: { width: number; height: number }) {
+export default function VideoCard() {
     const [isMicOn, setIsMicOn] = useState(false);
+    const [isCameraOn, setIsCameraOn] = useState(false);
+    const [isInteractionOn, setIsInteractionOn] = useState(false);
     const [transcript, setTranscript] = useState("");
 
     // Handle speech recognition events
     useSpeechRecognitionEvent("result", (event) => {
-        console.log("Speech recognition result:", event);
         setTranscript(event.results[0]?.transcript || "");
     });
 
-    useEffect(() => {
-        console.log(height, width);
-    });
-
-
-    useSpeechRecognitionEvent("start", () => console.log("Speech recognition started"));
-    useSpeechRecognitionEvent("end", () => console.log("Speech recognition ended"));
+    useSpeechRecognitionEvent("start", () => {});
+    useSpeechRecognitionEvent("end", () => {});
     useSpeechRecognitionEvent("error", (event) => {
-        console.error("Speech recognition error:", event);
         setTranscript("Error: " + event.message);
     });
 
-
     const toggleMic = async () => {
         if (isMicOn) {
-            // Stop speech recognition
             ExpoSpeechRecognitionModule.stop();
         } else {
-            // Request permissions and start speech recognition
             const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
             if (result.granted) {
                 ExpoSpeechRecognitionModule.start({
@@ -46,17 +38,85 @@ export default function VideoCard({ width = 200, height = 120 }: { width: number
         setIsMicOn((prev) => !prev);
     };
 
+    const toggleCamera = () => {
+        setIsCameraOn((prev) => !prev);
+    };
+
+    const startCall = () => {
+        setIsInteractionOn(true);
+        // Add your call starting logic here
+    };
+
+    const endCall = () => {
+        setIsInteractionOn(false);
+        // Add your call ending logic here
+    };
+
     return (
-        <View className="bg-white rounded-lg shadow-md justify-center items-center" style={{ width, height }}>
-            <Text className="text-base font-semibold text-gray-800">Video Card Content</Text>
-            <Text className="text-sm text-gray-600 mt-2">Transcript: {transcript}</Text>
-            <TouchableOpacity onPress={toggleMic} style={{ marginTop: 10 }}>
-                <Ionicons
-                    name={isMicOn ? "mic" : "mic-off"}
-                    size={24}
-                    color={isMicOn ? "green" : "red"}
-                />
-            </TouchableOpacity>
+        <View className="bg-black flex-1 p-2 justify-center items-center">
+            {/* Main content area */}
+            <View className="flex-1 w-full justify-center items-center">
+                <Text className="text-white text-sm font-bold">
+                    Connect with Dr.G
+                </Text>
+                {transcript ? (
+                    <Text className="text-white text-sm mt-4 px-6 text-center">
+                        {transcript}
+                    </Text>
+                ) : null}
+            </View>
+
+            {/* Bottom control bar */}
+            <View className="w-full flex-row justify-center items-center space-x-12">
+                {/* Camera toggle button */}
+                <TouchableOpacity
+                    onPress={toggleCamera}
+                    className="bg-black bg-opacity-50 rounded-full p-3"
+                    disabled={!isInteractionOn}
+                >
+                    <Ionicons
+                        name={isCameraOn ? "videocam" : "videocam-off"}
+                        size={16}
+                        color={isCameraOn ? "white" : "gray"}
+                    />
+                </TouchableOpacity>
+                {/* Call button */}
+                {!isInteractionOn ? (
+                    <TouchableOpacity
+                        onPress={startCall}
+                        className="rounded-full p-3 bg-green-500"
+                    >
+                        <Ionicons
+                            name="call"
+                            size={16}
+                            color="white"
+                        />
+                    </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity
+                        onPress={endCall}
+                        className="rounded-full p-3 bg-red-500"
+                    >
+                        <Ionicons
+                            name="call"
+                            size={16}
+                            color="white"
+                        />
+                    </TouchableOpacity>
+                )}
+                {/* Mic toggle button */}
+                <TouchableOpacity
+                    onPress={toggleMic}
+                    className="rounded-full p-3"
+                    disabled={!isInteractionOn}
+                >
+                    <Ionicons
+                        name={isMicOn ? "mic" : "mic-off"}
+                        size={16}
+                        color={isMicOn ? "white" : "gray"}
+                    />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
