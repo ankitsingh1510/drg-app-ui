@@ -30,6 +30,7 @@ const HeygenIntegration = () => {
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Api-Key': API_KEY,
+                    'version': "v2",
                 },
                 body: JSON.stringify({
                     video_encoding: "H264",
@@ -45,10 +46,13 @@ const HeygenIntegration = () => {
 
             const data = await response.json();
             setSessionInfo(data.data);
+            console.log('Session info:', data.data);
+            console.log('Session ID:', data.data.session_id);
 
             const { sdp: serverSdp, ice_servers2: iceServers } = data.data;
             const pc = new RTCPeerConnection({ iceServers }) as any; // Explicitly cast to any to bypass TypeScript errors
             setPeerConnection(pc);
+            console.log('PeerConnection initialized:', pc);
             pc.ontrack = (event) => {
                 console.log('ontrack event received:', event.track.kind);
 
@@ -73,7 +77,11 @@ const HeygenIntegration = () => {
 
             setTimeout(() => {
                 console.log('Starting session');
-                startAndDisplay();
+                if (pc) {
+                    startAndDisplay(pc, data.data);
+                } else {
+                    console.error('PeerConnection is not initialized.');
+                }
             }, 10000);
         } catch (error) {
             console.error('Error creating or starting session:', error);
@@ -81,13 +89,33 @@ const HeygenIntegration = () => {
         }
     };
 
-    const startAndDisplay = async () => {
+    async function startSession(session_id, sdp) {
+        const response = await fetch(`${SERVER_URL}/v1/streaming.start`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Api-Key': API_KEY,
+            },
+            body: JSON.stringify({ session_id, sdp }),
+        });
+        if (response.status === 500) {
+            console.error('Server error');
+            console.log('Server Error. Please ask the staff if the service has been turned on');
+            throw new Error('Server error');
+        } else {
+            const data = await response.json();
+            return data.data;
+        }
+    }
+
+
+    const startAndDisplay = async (pc, sessionInfo) => {
         try {
-            console.log('starting session');
-            const localDescription = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(localDescription);
+            console.log('starting session', pc);
+            const localDescription = await pc.createAnswer();
+            await pc.setLocalDescription(localDescription);
             console.log('localDescription', localDescription);
-            peerConnection.onicecandidate = ({ candidate }) => {
+            pc.onicecandidate = ({ candidate }) => {
                 console.log('Received ICE candidate:', candidate);
                 if (candidate) {
                     handleICE(sessionInfo.session_id, candidate.toJSON());
@@ -95,9 +123,21 @@ const HeygenIntegration = () => {
             };
 
             // When ICE connection state changes, display the new state
-            peerConnection.oniceconnectionstatechange = (event) => {
-                console.log(`ICE connection state changed to: ${peerConnection.iceConnectionState}`);
+            pc.oniceconnectionstatechange = (event) => {
+                console.log('ICE connection state change event:', event);
+                console.log('ICE connection state:', pc);
+                console.log(`ICE connection state changed to: ${pc.iceConnectionState}`);
             };
+
+            await startSession(sessionInfo.session_id, localDescription);
+
+            var receivers = peerConnection?.getReceivers();
+
+            receivers.forEach((receiver) => {
+                receiver.jitterBufferTarget = 500
+            });
+
+            console.log('Session started successfully');
         } catch (error) {
             console.error('Error starting session:', error);
         }
@@ -105,7 +145,8 @@ const HeygenIntegration = () => {
 
     const handleICE = async (session_id, candidate) => {
         try {
-            await fetch(`${SERVER_URL}/v1/streaming.ice`, {
+            console.log('Sending ICE candidate:', candidate, session_id);
+            const response = await fetch(`${SERVER_URL}/v1/streaming.ice`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -113,6 +154,15 @@ const HeygenIntegration = () => {
                 },
                 body: JSON.stringify({ session_id, candidate }),
             });
+            console.log('ICE candidate response:', response);
+            if (response.status === 500) {
+                console.error('Server error');
+                console.log('Server Error. Please ask the staff if the service has been turned on');
+                throw new Error('Server error');
+            } else {
+                const data = await response.json();
+                return data;
+            }
         } catch (error) {
             console.error('Error handling ICE candidate:', error);
         }
@@ -142,11 +192,13 @@ const HeygenIntegration = () => {
                 body: JSON.stringify({ session_id: sessionInfo.session_id, text: taskInput }),
             });
             console.log(response);
+            updateStatus('Task sent successfully');
             if (response.status === 500) {
                 throw new Error('Server error');
+            } else {
+                const data = await response.json();
+                return data.data;
             }
-
-            updateStatus('Task sent successfully');
         } catch (error) {
             console.error('Error sending task:', error);
             updateStatus('Error sending task.');
