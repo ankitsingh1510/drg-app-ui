@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Button, TextInput, Alert, StyleSheet } from 'react-native';
 import { RTCView, mediaDevices, RTCPeerConnection, RTCSessionDescription } from 'react-native-webrtc';
 
@@ -7,7 +7,7 @@ const HeygenIntegration = () => {
     const [sessionInfo, setSessionInfo] = useState(null);
     const [peerConnection, setPeerConnection] = useState(null);
     const [taskInput, setTaskInput] = useState('');
-    const [mediaStream, setMediaStream] = useState(null);
+    const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
 
     const SERVER_URL = 'https://api.heygen.com';
     const API_KEY = 'NDMxMDhjYmI1ZTFlNDc3MTgzMzczMjZlM2Y2NDI1ZDQtMTcyNDE2ODE5OQ==';
@@ -17,9 +17,13 @@ const HeygenIntegration = () => {
         setStatus((prev) => `${prev}\n${message}`);
     };
 
+    function onMessage(event) {
+        const message = event.data;
+        console.log('Received message:', message);
+    }
+
     const createNewSession = async () => {
         updateStatus('Creating new session... please wait');
-
         try {
             const response = await fetch(`${SERVER_URL}/v1/streaming.new`, {
                 method: 'POST',
@@ -28,6 +32,7 @@ const HeygenIntegration = () => {
                     'X-Api-Key': API_KEY,
                 },
                 body: JSON.stringify({
+                    video_encoding: "H264",
                     quality: 'low',
                     avatar_name: VITE_DR_G_AVATAR_ID,
                     voice: { voice_id: VITE_DR_G_VOICE_ID },
@@ -42,51 +47,61 @@ const HeygenIntegration = () => {
             setSessionInfo(data.data);
 
             const { sdp: serverSdp, ice_servers2: iceServers } = data.data;
-            const pc = new RTCPeerConnection({ iceServers });
-
+            const pc = new RTCPeerConnection({ iceServers }) as any; // Explicitly cast to any to bypass TypeScript errors
+            setPeerConnection(pc);
             pc.ontrack = (event) => {
-                console.log("ABCevent", event);
-                if (event.streams && event.streams[0]) {
-                    console.log("123456", event);
+                console.log('ontrack event received:', event.track.kind);
+
+                // if (event.streams && event.streams[0]) {
+                //     console.log("123456", event);
+                //     setMediaStream(event.streams[0]);
+                // }
+                if (event.track.kind === 'audio' || event.track.kind === 'video') {
                     setMediaStream(event.streams[0]);
                 }
             };
 
-            pc.onicecandidate = ({ candidate }) => {
-                console.log("ABC", candidate);
-                if (candidate) {
-                    handleICE(data.data.session_id, candidate.toJSON());
-                }
+            pc.ondatachannel = (event) => {
+                const dataChannel = event.channel;
+                dataChannel.onmessage = onMessage;
             };
 
             const remoteDescription = new RTCSessionDescription(serverSdp);
             await pc.setRemoteDescription(remoteDescription);
 
-            setPeerConnection(pc);
             updateStatus('Session creation completed. Starting session... please wait');
 
-            // Automatically start the session
-            const localDescription = await pc.createAnswer();
-            await pc.setLocalDescription(localDescription);
-
-            await fetch(`${SERVER_URL}/v1/streaming.start`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Api-Key': API_KEY,
-                },
-                body: JSON.stringify({
-                    session_id: data.data.session_id,
-                    sdp: localDescription.sdp,
-                }),
-            });
-
-            updateStatus('Session started successfully');
+            setTimeout(() => {
+                console.log('Starting session');
+                startAndDisplay();
+            }, 10000);
         } catch (error) {
             console.error('Error creating or starting session:', error);
             updateStatus('Error creating or starting session.');
         }
     };
+
+    const startAndDisplay = async () => {
+        try {
+            console.log('starting session');
+            const localDescription = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(localDescription);
+            console.log('localDescription', localDescription);
+            peerConnection.onicecandidate = ({ candidate }) => {
+                console.log('Received ICE candidate:', candidate);
+                if (candidate) {
+                    handleICE(sessionInfo.session_id, candidate.toJSON());
+                }
+            };
+
+            // When ICE connection state changes, display the new state
+            peerConnection.oniceconnectionstatechange = (event) => {
+                console.log(`ICE connection state changed to: ${peerConnection.iceConnectionState}`);
+            };
+        } catch (error) {
+            console.error('Error starting session:', error);
+        }
+    }
 
     const handleICE = async (session_id, candidate) => {
         try {
@@ -137,6 +152,31 @@ const HeygenIntegration = () => {
             updateStatus('Error sending task.');
         }
     };
+    useEffect(() => {
+        if (mediaStream) {
+            console.log('Media stream details:', {
+                id: mediaStream._id,
+                active: mediaStream.active,
+                trackCount: mediaStream._tracks?.length || 0
+            });
+
+            // Check if there are tracks in the stream
+            if (mediaStream._tracks && mediaStream._tracks.length > 0) {
+                mediaStream._tracks.forEach(track => {
+                    console.log(`Track ${track.id}:`, {
+                        kind: track.kind,
+                        readyState: track._readyState,
+                        enabled: track._enabled,
+                        muted: track._muted
+                    });
+                });
+            } else {
+                console.warn('No tracks found in the media stream');
+            }
+        }
+    }, [mediaStream]);
+
+
 
     return (
         <View style={styles.container}>
@@ -149,7 +189,13 @@ const HeygenIntegration = () => {
                 onChangeText={setTaskInput}
             />
             <Button title="Send Task" onPress={repeatHandler} />
-            {mediaStream && <RTCView streamURL={mediaStream.toURL()} style={styles.video} />}
+            <RTCView
+                objectFit='cover'
+                streamURL={mediaStream?.toURL()}
+                style={styles.video}
+                zOrder={1}
+            />
+
         </View>
     );
 };
@@ -164,6 +210,12 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         color: '#333',
     },
+    noVideoContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        flex: 1,
+    }
+    ,
     input: {
         height: 40,
         borderColor: '#ccc',
@@ -174,7 +226,6 @@ const styles = StyleSheet.create({
     video: {
         width: '100%',
         height: 200,
-        backgroundColor: '#000',
     },
 });
 
