@@ -55,11 +55,6 @@ const HeygenIntegration = () => {
             console.log('PeerConnection initialized:', pc);
             pc.ontrack = (event) => {
                 console.log('ontrack event received:', event.track.kind);
-
-                // if (event.streams && event.streams[0]) {
-                //     console.log("123456", event);
-                //     setMediaStream(event.streams[0]);
-                // }
                 if (event.track.kind === 'audio' || event.track.kind === 'video') {
                     setMediaStream(event.streams[0]);
                 }
@@ -132,11 +127,11 @@ const HeygenIntegration = () => {
             await startSession(sessionInfo.session_id, localDescription);
 
             var receivers = peerConnection?.getReceivers();
-
-            receivers.forEach((receiver) => {
-                receiver.jitterBufferTarget = 500
-            });
-
+            if (receivers && receivers.length > 0) {
+                receivers.forEach((receiver) => {
+                    receiver.jitterBufferTarget = 500
+                });
+            }
             console.log('Session started successfully');
         } catch (error) {
             console.error('Error starting session:', error);
@@ -227,6 +222,19 @@ const HeygenIntegration = () => {
             }
         }
     }, [mediaStream]);
+
+    useEffect(() => {
+        const getMedia = async () => {
+            try {
+                const result = await mediaDevices.getUserMedia({ audio: true });
+                console.log('Audio permissions granted:', result);
+            } catch (error) {
+                console.error('Error getting media permissions:', error);
+            }
+        };
+
+        getMedia();
+    }, []);
 
 
 
