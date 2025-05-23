@@ -1,7 +1,11 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { AssignedAppsResponse, FileExistsParams, FileInfo, FileUploadParams, SignedURLResponse } from "../interfaces/report";
 import type { FileParamInfo, TokenPayload, UploadConfig, UploadProgressEvent } from "../types/report";
 import type { GQLRequestParams, GQLResponse } from "../types/types";
 import axios from "./axios";
+import Constants from 'expo-constants';
+
+const { EXPO_PUBLIC_BASE_URL, EXPO_PUBLIC_BASE_URL_GQL } = Constants.expoConfig.extra;
 class ReportServiceClass {
     private readonly baseUrl: string;
     private readonly gqlUrl: string;
@@ -9,16 +13,16 @@ class ReportServiceClass {
     private thumbControllers: Map<string, AbortController>;
 
     constructor() {
-        this.baseUrl = "https://dev.indx.ai/platform";
-        this.gqlUrl = "https://dev.indx.ai/bl";
+        this.baseUrl = EXPO_PUBLIC_BASE_URL;
+        this.gqlUrl = EXPO_PUBLIC_BASE_URL_GQL;
         this.fileControllers = new Map();
         this.thumbControllers = new Map();
     }
-    token = `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2Rldi5pbmR4LmFpL3BsYXRmb3JtIiwic3ViIjoxLCJ1c2VybmFtZSI6ImFkbWluQGluZHguYWkiLCJyb2xlX2lkIjoxLCJvcmdhbml6YXRpb25faWQiOjEsIm9yZ2FuaXphdGlvbl9uYW1lIjoiaW5keCIsInNjb3BlIjoiIiwiZm9yY2VfcGFzc3dvcmRfY2hhbmdlIjpudWxsLCJwYXNzd29yZF9leHBpcnlfZGF5cyI6bnVsbCwiZXhwIjoxNzQ3NzMzMDc1MDA4LCJpYXQiOjE3NDcxMjgyNzUwMDgsImFzc2lnbmVkQXBwbGljYXRpb25zIjpbeyJhcHBsaWNhdGlvbklkIjoxLCJuYW1lIjoiaU1hbmFnZSJ9LHsiYXBwbGljYXRpb25JZCI6MywibmFtZSI6ImlEaXNjb3ZlcnkifSx7ImFwcGxpY2F0aW9uSWQiOjUsIm5hbWUiOiJpQ2UifSx7ImFwcGxpY2F0aW9uSWQiOjIyLCJuYW1lIjoiaUtCIn0seyJhcHBsaWNhdGlvbklkIjo4LCJuYW1lIjoiaUxJTVMifSx7ImFwcGxpY2F0aW9uSWQiOjYsIm5hbWUiOiJpUE9DIn0seyJhcHBsaWNhdGlvbklkIjo0LCJuYW1lIjoiaURlc2lnbmVyIn0seyJhcHBsaWNhdGlvbklkIjo4MCwibmFtZSI6IkRyRyJ9LHsiYXBwbGljYXRpb25JZCI6NywibmFtZSI6ImlDYXJlIn0seyJhcHBsaWNhdGlvbklkIjoyMzEsIm5hbWUiOiJpQ2FyZSBWMiJ9LHsiYXBwbGljYXRpb25JZCI6MiwibmFtZSI6ImlVcGxvYWRlciJ9XSwidXNlcl90eXBlIjoibG9jYWxVc2VyIn0.sn2JyCaiF5qsJqhedWE_P_Cic3a3EW4uHU9IVjb4NgaPiB7vBqhUEuTtD87cL-i3F2-hPM-pnqRctpDiER6zXrXnsdce-dYKjZQmGdYZUleokj8kMSoFekVY8Xm-ezR4EfzcoERFBuN63PZ0-6SUCqHxlAuwN7ZJr3lWUg2vskv_Cw3Sm5BHb2y2yaTjIwxwYvix5jE5QrK59VK-uz8A5hJ6jaNdLf2zJ1_DXGe0te2VuXCZuEtc-6VBXsLqWADfZCpJfxwqVSWFU_5s28PI6Ohtt7DFFK2MhnAb07ei7tBb-nS27mjRSj4PeyJZLDw3LpJmv85H9NFyI6jNrCnR9oIg2EehRdPHhctSBzvtwWePOCZoFTmZ3GBHre3kf-1aHWh6hq4OKr-U-Nyb1F1cVtDYkR3Wn5ZSWYd3Wz-8KDsgbzzIqsMely3jXC0_dr4DE7roFkPZtFeed2c6SD_eKSulF16JbG3XEakdvotz1b0gpAcnitOWW8qDWC4ANbDwWGZHNOsfYLTCjAcJ6V6ncyeAKGiKYDtIbOy8TitH1rz5I7PbRGOdKpxGZHcnZPhEK186qeW_DBnsdo6h-GoyIfaf0P5THDmf1OzEIPOdxf_ePLaCzKlYrQMqzNrlSBaJK-twXmIs_TjDOVwjPKn-R3T-EXeBkI9X5SRjpsJMgKg`;
-    private getGQLResponse(reqParams: GQLRequestParams): Promise<GQLResponse> {
+    private async getGQLResponse(reqParams: GQLRequestParams): Promise<GQLResponse> {
+        const token = await AsyncStorage.getItem('token');
         return axios.post(this.gqlUrl + "/graphql", reqParams, {
             headers: {
-                Authorization: `Bearer ${this.token}`,
+                Authorization: `Bearer ${token}`,
             },
         });
     }
@@ -74,7 +78,7 @@ class ReportServiceClass {
                 {
                     headers: {
                         "Content-Type": "multipart/form-data",
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        Authorization: `Bearer ${await AsyncStorage.getItem('token')}`,
                     },
                     signal: controller.signal,
                     onUploadProgress: (progressEvent) => {
@@ -148,8 +152,7 @@ class ReportServiceClass {
     }
 
     async getSignedURL(encodedURL: string, viewFile = false, fileType = ""): Promise<SignedURLResponse> {
-        // const token = localStorage.getItem("token");
-        const token = this.token;
+        const token = await AsyncStorage.getItem('token');
         if (!token) {
             throw new Error("Authentication token not found");
         }
