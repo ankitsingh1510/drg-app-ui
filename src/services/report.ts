@@ -18,8 +18,10 @@ class ReportServiceClass {
         this.fileControllers = new Map();
         this.thumbControllers = new Map();
     }
+
     private async getGQLResponse(reqParams: GQLRequestParams): Promise<GQLResponse> {
-        const token = await AsyncStorage.getItem('token');
+        const token = await AsyncStorage.getItem("token");
+        console.log(token);
         return axios.post(this.gqlUrl + "/graphql", reqParams, {
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -63,7 +65,7 @@ class ReportServiceClass {
         };
 
         const response = await this.getGQLResponse(reqParams);
-        // console.log("File exists response:", response.data);
+        console.log("File exists response:", response.data);
         return response.data;
     }
 
@@ -72,13 +74,14 @@ class ReportServiceClass {
         this.fileControllers.set(param.uniqueId, controller);
 
         try {
+            const token = await AsyncStorage.getItem("token");
             const response = await axios.post(
                 `${this.baseUrl}/api/v1/drg/rag`,
                 param,
                 {
                     headers: {
                         "Content-Type": "multipart/form-data",
-                        Authorization: `Bearer ${await AsyncStorage.getItem('token')}`,
+                        Authorization: `Bearer ${token}`,
                     },
                     signal: controller.signal,
                     onUploadProgress: (progressEvent) => {
@@ -130,34 +133,34 @@ class ReportServiceClass {
     }
 
     async getFileList(paramInfo: FileParamInfo): Promise<any> {
-        const reqParams: GQLRequestParams = {
-            query: `query fileList($fileAttr: JSONObject) {
-        getFileList(fileAttribute: $fileAttr)
-      }`,
-            variables: {
-                fileAttr: {
-                    bucket: paramInfo.bucketName || "",
-                    maxResults: paramInfo.maxResults,
-                    prefix: paramInfo.prefix,
-                    delimiter: paramInfo.delimiter,
-                    sharedFlag: paramInfo.sharedFlag,
-                    includeTrailingDelimiter: paramInfo.includeTrailingDelimiter,
-                    pageToken: paramInfo.pageToken,
+        try {
+            const reqParams: GQLRequestParams = {
+                query: `query fileList($fileAttr: JSONObject) {
+            getFileList(fileAttribute: $fileAttr)
+          }`,
+                variables: {
+                    fileAttr: {
+                        bucket: paramInfo.bucketName || "",
+                        maxResults: paramInfo.maxResults,
+                        prefix: paramInfo.prefix,
+                        delimiter: paramInfo.delimiter,
+                        sharedFlag: paramInfo.sharedFlag,
+                        includeTrailingDelimiter: paramInfo.includeTrailingDelimiter,
+                        pageToken: paramInfo.pageToken,
+                    },
                 },
-            },
-        };
-
-        const response = await this.getGQLResponse(reqParams);
-        return response.data.data.getFileList;
+            };
+            const response = await this.getGQLResponse(reqParams);
+            return response.data.data.getFileList;
+        } catch (error) {
+            console.error("Failed to get file list:", JSON.stringify(error));
+            return null;
+        }
     }
 
     async getSignedURL(encodedURL: string, viewFile = false, fileType = ""): Promise<SignedURLResponse> {
-        const token = await AsyncStorage.getItem('token');
-        if (!token) {
-            throw new Error("Authentication token not found");
-        }
-
         try {
+            const token = await AsyncStorage.getItem("token");
             const response = await axios.get(
                 `${this.baseUrl}/api/v1/storage/blobStoreObjects/${encodedURL}/signedUrl`,
                 {
@@ -208,36 +211,18 @@ class ReportServiceClass {
     }
 
     async getUploadConfig(): Promise<UploadConfig> {
-        const reqParams: GQLRequestParams = {
-            query: `query getUploadConfig { getUploadConfig }`
-        };
-
-        const response = await this.getGQLResponse(reqParams);
-        return response.data.data.getUploadConfig;
-    }
-
-    async revokeToken(): Promise<any> {
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-            throw new Error("No token to revoke");
-        }
-
         try {
-            return await axios.post(
-                `${this.baseUrl}/api/token/revoke`,
-                { token },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const reqParams: GQLRequestParams = {
+                query: `query getUploadConfig { getUploadConfig }`
+            };
+            const response = await this.getGQLResponse(reqParams);
+            return response.data.data.getUploadConfig;
         } catch (error) {
-            console.error("Failed to revoke token:", error);
+            console.error("Failed to get upload config:", error);
             throw error;
         }
     }
+
 }
 
 export const ReportService = new ReportServiceClass();

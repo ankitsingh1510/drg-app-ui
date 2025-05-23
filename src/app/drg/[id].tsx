@@ -16,6 +16,7 @@ import {
 } from "react-native"
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import VideoCard from "@/components/VideoCard";
+import HeygenIntegration from "@/components/HeygenIntegration";
 
 export default function ReportDetail() {
   const { id } = useLocalSearchParams()
@@ -175,6 +176,7 @@ export default function ReportDetail() {
         <GestureDetector gesture={gesture}>
           <Animated.View style={animatedCardStyle}>
             <VideoCard/>
+            {/* <HeygenIntegration/> */}
           </Animated.View>
         </GestureDetector>
       </View>
