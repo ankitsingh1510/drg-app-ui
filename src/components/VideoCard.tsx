@@ -241,6 +241,26 @@ export default function VideoCard() {
         }
     };
 
+    async function stopSession(session_id) {
+        const response = await fetch(`${SERVER_URL}/v1/streaming.stop`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Api-Key': API_KEY,
+            },
+            body: JSON.stringify({ session_id }),
+        });
+        if (response.status === 500) {
+            console.error('Server error');
+            console.log('Server Error. Please ask the staff for help');
+            throw new Error('Server error');
+        } else {
+            const data = await response.json();
+            return data.data;
+        }
+    }
+
+
     useSpeechRecognitionEvent("result", (event) => {
         setTranscript(event.results[0]?.transcript || "");
     });
@@ -285,16 +305,18 @@ export default function VideoCard() {
         // }, 2000); // Simulate a delay for connection
     };
 
-    const endInteraction = () => {
+    const endInteraction = async () => {
         setIsLoading(false);
         setIsConnected(false);
         setIsInteractionOn(false);
+        await stopSession(sessionInfo.session_id);
+        console.log('Session stopped');
         // setIsInteractionOn(false);
         // Add your call ending logic here
     };
 
     return (
-        <View className="flex-1 bg-[#dbeafe] relative">
+        <View className="flex-1 bg-[#dbeafe] relative rounded-2xl overflow-hidden">
             {/* Main content */}
             {(isLoading && !isConnected) ? (
                 <View className="flex-1 justify-center items-center px-4">
@@ -320,15 +342,15 @@ export default function VideoCard() {
                 </View>
             )}
 
-            {/* Floating Control Buttons */}
+            {/* Bottom Control Bar */}
             <View
-                className="absolute bottom-1 w-full flex-row justify-center items-center space-x-4"
+                className="w-full bg-black flex-row justify-center items-center p-1 gap-2"
             >
                 {/* Call Button */}
                 {!isLoading && !isInteractionOn && !isConnected && (
                     <TouchableOpacity
                         onPress={startInteraction}
-                        className="rounded-full p-2 bg-green-500"
+                        className="bg-green-500 rounded-lg w-8 h-8 justify-center items-center"
                     >
                         <Ionicons name="call" size={16} color="white" />
                     </TouchableOpacity>
@@ -340,7 +362,7 @@ export default function VideoCard() {
                         {/* Camera Button */}
                         <TouchableOpacity
                             onPress={toggleCamera}
-                            className="rounded-full p-3"
+                            className="bg-gray-700 rounded-lg w-8 h-8 justify-center items-center"
                             disabled={!isInteractionOn}
                         >
                             <Ionicons
@@ -353,7 +375,7 @@ export default function VideoCard() {
                         {/* End Call Button */}
                         <TouchableOpacity
                             onPress={endInteraction}
-                            className="rounded-full p-2 bg-red-500"
+                            className="bg-red-500 rounded-lg w-8 h-8 justify-center items-center"
                         >
                             <Ionicons name="call" size={16} color="white" />
                         </TouchableOpacity>
@@ -361,7 +383,7 @@ export default function VideoCard() {
                         {/* Mic Button */}
                         <TouchableOpacity
                             onPress={toggleMic}
-                            className="rounded-full p-3"
+                            className="bg-gray-700 rounded-lg w-8 h-8 justify-center items-center"
                             disabled={!isInteractionOn}
                         >
                             <Ionicons
